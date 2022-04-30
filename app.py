@@ -23,6 +23,11 @@ class MeetupDayException(ValueError):
 
 
 class MeetupDate:
+    """Finds actual meet up date based on a date description
+
+    For example, if given "1st Monday of January 2022", the correct meetup date is January 3, 2022.
+    """
+
     @staticmethod
     def find_last_occurrence(year, month, week_day):
         """Finds the last occurrence of week_day in the month
@@ -108,119 +113,181 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
-class TimerDisplay(ttk.Frame):
+class DigitLabel(ttk.Label):
     def __init__(self, master, **kw):
+        super().__init__(master, **kw)
+
+        self['background'] = 'black'
+        self['foreground'] = 'green'
+        self['text'] = '00'
+
+
+class CountDownDisplay(ttk.Frame):
+    def __init__(self, master):
         super().__init__(master)
-        self.years_label = tk.Label(self, text="00", **kw)
-        self.months_label = tk.Label(self, text="00", **kw)
-        self.days_label = tk.Label(self, text="00", **kw)
-        self.hours_label = tk.Label(self, text="00", **kw)
-        self.minutes_label = tk.Label(self, text="00", **kw)
-        self.seconds_label = tk.Label(self, text="00", **kw)
 
-        self.years_label.grid(row=1, column=0, padx=5, pady=(5, 0))
-        self.months_label.grid(row=1, column=1, padx=5, pady=(5, 0))
-        self.days_label.grid(row=1, column=2, padx=5, pady=(5, 0))
+        # create the widgets
+        self.years_label = DigitLabel(self)
+        self.months_label = DigitLabel(self)
+        self.days_label = DigitLabel(self)
 
-        tk.Label(self, text='Y').grid(row=2, column=0)
-        tk.Label(self, text='M').grid(row=2, column=1)
-        tk.Label(self, text='D').grid(row=2, column=2)
+        self.hours_label = DigitLabel(self)
+        self.minutes_label = DigitLabel(self)
+        self.seconds_label = DigitLabel(self)
 
-        self.hours_label.grid(row=3, column=0, padx=5, pady=(5, 0))
-        self.minutes_label.grid(row=3, column=1, padx=5, pady=(5, 0))
-        self.seconds_label.grid(row=3, column=2, padx=5, pady=(5, 0))
+        # add the widgets
+        # years, months, days
+        self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
+        ttk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
+        self.months_label.grid(row=0, column=2, padx=5, pady=(5, 0))
+        ttk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
+        self.days_label.grid(row=0, column=4, padx=5, pady=(5, 0))
 
-        tk.Label(self, text='H').grid(row=4, column=0)
-        tk.Label(self, text='M').grid(row=4, column=1)
-        tk.Label(self, text='S').grid(row=4, column=2)
+        ttk.Label(self, text='Y').grid(row=1, column=0)
+        ttk.Label(self, text='M').grid(row=1, column=2)
+        ttk.Label(self, text='D').grid(row=1, column=4)
+
+        # hours, minutes, seconds
+        self.hours_label.grid(row=2, column=0, padx=5, pady=(5, 0))
+        ttk.Label(self, text='|').grid(row=2, column=1, pady=(3, 0))
+        self.minutes_label.grid(row=2, column=2, padx=5, pady=(5, 0))
+        ttk.Label(self, text='|').grid(row=2, column=3, pady=(3, 0))
+        self.seconds_label.grid(row=2, column=4, padx=5, pady=(5, 0))
+
+        ttk.Label(self, text='H').grid(row=3, column=0)
+        ttk.Label(self, text='M').grid(row=3, column=2)
+        ttk.Label(self, text='S').grid(row=3, column=4)
 
 
-class ButtonFrame(ttk.Frame):
+class SimpleTimer(ttk.Frame):
+    """Creates a simple countdown timer with year, months, days, hours, minutes, seconds
+
+    The first 3/4 of the time is green.
+
+    The next 3/16 of the time is yellow.
+
+    The last 3/64 of the time is red.
+    """
     def __init__(self, master):
-        super(ButtonFrame, self).__init__(master=master)
-        self.start_button = tk.Button(self, text='Start', font=('Times', 10))
-        self.stop_button = ttk.Button(self, text='Stop')
-        self.reset_button = ttk.Button(self, text='Reset')
-        self.pause_button = ttk.Button(self, text='Pause')
-        self.start_button.grid(row=2, column=0)
-        self.stop_button.grid(row=2, column=1)
-        self.reset_button.grid(row=2, column=2)
-        self.pause_button.grid(row=2, column=3)
+        super().__init__(master)
+
+        # create the widgets
+        self.display = CountDownDisplay(self)
+        self.start_button = tk.Button(self, text='\u25b6')
+        self.stop_button = tk.Button(self, text='\u23F9')
+        self.pause_button = tk.Button(self, text='\u23F8')
+        # layout the widgets
+        self.display.grid(row=0, column=0, columnspan=3)
+        self.start_button.grid(row=1, column=0)
+        self.pause_button.grid(row=1, column=1)
+        self.stop_button.grid(row=1, column=2)
 
 
-class RadioButtons(ttk.Frame):
-    def __init__(self, master):
-        super(RadioButtons, self).__init__(master=master)
-        self.timed_radio = ttk.Radiobutton(self, text="Timer", value="timer")
-        self.meetup_radio = ttk.Radiobutton(self, text="Meetup", value="meetup")
-        self.timed_radio.grid(row=0, column=0)
-        self.meetup_radio.grid(row=0, column=1)
 
+        # add this frame to the parent layout
+        self.grid(row=0, column=0)
 
-class View(ttk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        # create the radio buttons to choose between a date in the future or a set amount of time
-        self.radio_buttons = RadioButtons(self)
-        self.timer_display = TimerDisplay(self, background='black', foreground='green', font=('Lucida Console', 12))
-        self.buttons = ButtonFrame(self)
-
-        # add widgets to the view
-
-        self.radio_buttons.grid(row=0, column=0)
-        self.timer_display.grid(row=1, column=0, columnspan=2)
-        self.buttons.grid(row=2, column=0)
-
-
-class Model:
-    def __init__(self):
-        self.timed = False
-        self.meetup = False
-        self.timer_type = tk.StringVar()
-
-
-class Controller:
-    def __init__(self, model, view):
-        self.model = model
-        self.view = view
-
-        self.setup_view()
-        self.setup_event_handlers()
-        self.setup_commands()
-
-    def setup_view(self):
-        self.view.radio_buttons.meetup_radio['variable'] = self.model.timer_type
-        self.view.radio_buttons.timed_radio['variable'] = self.model.timer_type
-
-    def setup_event_handlers(self):
+    def reset(self):
         pass
 
-    def setup_commands(self):
-        self.view.radio_buttons.meetup_radio['command'] = self.timer_type_changed
-        self.view.radio_buttons.timed_radio['command'] = self.timer_type_changed
 
-    def timer_type_changed(self):
-        if self.model.timer_type.get() == 'meetup':
-            self.view.buttons.pause_button['state'] = tk.DISABLED
-        else:
-            self.view.buttons.pause_button['state'] = tk.NORMAL
+class MeetupTimer(ttk.Frame):
+    """Creates a meetup countdown timer
+
+    This timer counts down to a certain date or a generic
+
+    The first 3/4 of the time is green.
+
+    The next 3/16 of the time is yellow.
+
+    The last 3/64 of the time is red.
+    """
+    def __init__(self, master):
+        super().__init__(master)
+
+        # create the widgets
+        self.display = CountDownDisplay(self)
+
+        # add the widgets
+        self.display.grid(row=0, column=0)
+
+        self.grid(row=0, column=0)
+
+    def reset(self):
+        pass
+
+
+class ControlFrame(ttk.Labelframe):
+    """Controls which timer frame is displayed.
+
+    There are two timer types:
+        Simple timer - Counts down based on the user entered years, months, days, hours, minutes, seconds.
+
+        Meetup timer - Counts down the time until the next occurrence of the meetup date
+
+    The default is the simple timer
+    """
+    def __init__(self, master):
+        super().__init__(master)
+
+        self['text'] = 'Timer Type'
+
+        # create the radio buttons
+
+        self.timer_type_var = tk.StringVar()
+
+        # make the simple timer the default
+        self.timer_type_var.set('Simple')
+
+        self.grid(row=1, column=0)
+
+        self.timer_radio = ttk.Radiobutton(
+            self,
+            text="Simple",
+            value="Simple",
+            variable=self.timer_type_var,
+            command=self.change_timer_type,
+        )
+
+        self.meetup_radio = ttk.Radiobutton(
+            self,
+            text="Meetup",
+            value="Meetup",
+            variable=self.timer_type_var,
+            command=self.change_timer_type,
+        )
+
+        # add the radios to the parent
+        self.timer_radio.grid(row=0, column=0, padx=5, pady=5)
+        self.meetup_radio.grid(row=0, column=1, padx=5, pady=5)
+
+        # store the two different timer type frames in a dictionary
+        self.frames = {
+            'Simple': SimpleTimer(master),
+            'Meetup': MeetupTimer(master),
+        }
+
+        self.change_timer_type()
+
+    def change_timer_type(self):
+        for f in self.frames:
+            if f == self.timer_type_var.get():
+                frame = self.frames[self.timer_type_var.get()]
+                frame.reset()
+                frame.grid(row=0, column=0)
+            else:
+                self.frames[f].grid_remove()
 
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title = "Count Down"
-
-        model = Model()
-
-        view = View(self)
-        view.grid(row=0, column=0, padx=10, pady=10)
-
-        controller = Controller(model, view)
+        self.title('Countdown Timer')
+        self.resizable(False, False)
 
 
 if __name__ == "__main__":
     app = App()
+    ControlFrame(app)
     app.mainloop()
