@@ -113,7 +113,7 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
-class DigitLabel(ttk.Label):
+class DigitLabel(tk.Label):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
 
@@ -122,7 +122,7 @@ class DigitLabel(ttk.Label):
         self['text'] = '00'
 
 
-class CountDownDisplay(ttk.Frame):
+class CountDownDisplay(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
@@ -138,49 +138,55 @@ class CountDownDisplay(ttk.Frame):
         # add the widgets
         # years, months, days
         self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
-        ttk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
+        tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
         self.months_label.grid(row=0, column=2, padx=5, pady=(5, 0))
-        ttk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
+        tk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
         self.days_label.grid(row=0, column=4, padx=5, pady=(5, 0))
 
-        ttk.Label(self, text='Y').grid(row=1, column=0)
-        ttk.Label(self, text='M').grid(row=1, column=2)
-        ttk.Label(self, text='D').grid(row=1, column=4)
+        tk.Label(self, text='Y').grid(row=1, column=0)
+        tk.Label(self, text='M').grid(row=1, column=2)
+        tk.Label(self, text='D').grid(row=1, column=4)
 
         # hours, minutes, seconds
         self.hours_label.grid(row=2, column=0, padx=5, pady=(5, 0))
-        ttk.Label(self, text='|').grid(row=2, column=1, pady=(3, 0))
+        tk.Label(self, text='|').grid(row=2, column=1, pady=(3, 0))
         self.minutes_label.grid(row=2, column=2, padx=5, pady=(5, 0))
-        ttk.Label(self, text='|').grid(row=2, column=3, pady=(3, 0))
+        tk.Label(self, text='|').grid(row=2, column=3, pady=(3, 0))
         self.seconds_label.grid(row=2, column=4, padx=5, pady=(5, 0))
 
-        ttk.Label(self, text='H').grid(row=3, column=0)
-        ttk.Label(self, text='M').grid(row=3, column=2)
-        ttk.Label(self, text='S').grid(row=3, column=4)
+        tk.Label(self, text='H').grid(row=3, column=0)
+        tk.Label(self, text='M').grid(row=3, column=2)
+        tk.Label(self, text='S').grid(row=3, column=4)
 
 
-class SimpleTimer(ttk.Frame):
-    """Creates a simple countdown timer with year, months, days, hours, minutes, seconds
+class SimpleTimer(tk.Frame):
+    """Creates a simple countdown timer
 
-    The first 3/4 of the time is green.
+    The first 2/3 of the time is green.
 
-    The next 3/16 of the time is yellow.
+    The first 2/3 of the remaining time is yellow.
 
-    The last 3/64 of the time is red.
+    The remainder of the time is red.
     """
     def __init__(self, master):
         super().__init__(master)
 
         # create the widgets
+
         self.display = CountDownDisplay(self)
-        self.start_button = tk.Button(self, text='\u25b6')
-        self.stop_button = tk.Button(self, text='\u23F9')
-        self.pause_button = tk.Button(self, text='\u23F8')
+        # put the controls in a frame to control the spacing
+        self.control_frame = tk.Frame(self)
+        self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=1.5)
+        self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=1.5)
+        self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=1.5)
+        self.set_button = ttk.Button(self, text='Set')
         # layout the widgets
-        self.display.grid(row=0, column=0, columnspan=3)
-        self.start_button.grid(row=1, column=0)
-        self.pause_button.grid(row=1, column=1)
-        self.stop_button.grid(row=1, column=2)
+        self.display.grid(row=0, column=0)
+        self.control_frame.grid(row=1, column=0, pady=(5, 10))
+        self.start_button.grid(row=0, column=0)
+        self.pause_button.grid(row=0, column=1)
+        self.stop_button.grid(row=0, column=2)
+        self.set_button.grid(row=2, column=0, pady=5)
 
 
 
@@ -191,7 +197,7 @@ class SimpleTimer(ttk.Frame):
         pass
 
 
-class MeetupTimer(ttk.Frame):
+class MeetupTimer(tk.Frame):
     """Creates a meetup countdown timer
 
     This timer counts down to a certain date or a generic
