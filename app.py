@@ -176,9 +176,9 @@ class SimpleTimer(tk.Frame):
         self.display = CountDownDisplay(self)
         # put the controls in a frame to control the spacing
         self.control_frame = tk.Frame(self)
-        self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=1.5)
-        self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=1.5)
-        self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=1.5)
+        self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
+        self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
+        self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
         self.set_button = ttk.Button(self, text='Set')
         # layout the widgets
         self.display.grid(row=0, column=0)
