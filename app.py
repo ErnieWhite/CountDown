@@ -138,7 +138,7 @@ class TimerDisplay(ttk.Frame):
 class ButtonFrame(ttk.Frame):
     def __init__(self, master):
         super(ButtonFrame, self).__init__(master=master)
-        self.start_button = ttk.Button(self, text='Start')
+        self.start_button = tk.Button(self, text='Start', font=('Times', 10))
         self.stop_button = ttk.Button(self, text='Stop')
         self.reset_button = ttk.Button(self, text='Reset')
         self.pause_button = ttk.Button(self, text='Pause')
