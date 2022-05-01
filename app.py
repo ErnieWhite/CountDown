@@ -113,6 +113,24 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
+class SimpleTimerSet(tk.Frame):
+    def __init__(self, master, **kw):
+        super().__init__(master, **kw)
+
+        tk.Label(self, text="Hello from the simple timer setup").pack()
+
+        self.pack()
+
+
+class MeetupTimerSet(tk.Frame):
+    def __init__(self, master, **kw):
+        super().__init__(master, **kw)
+
+        tk.Label(self, text="Hello from the meetup timer setup").pack()
+
+        self.pack()
+
+
 class DigitLabel(tk.Label):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
@@ -179,7 +197,7 @@ class SimpleTimer(tk.Frame):
         self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
         self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
         self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
-        self.set_button = ttk.Button(self, text='Set')
+        self.set_button = ttk.Button(self, text='Set', command=self.set_timer)
         # layout the widgets
         self.display.grid(row=0, column=0)
         self.control_frame.grid(row=1, column=0, pady=(5, 10))
@@ -188,13 +206,16 @@ class SimpleTimer(tk.Frame):
         self.stop_button.grid(row=0, column=2)
         self.set_button.grid(row=2, column=0, pady=5)
 
-
-
         # add this frame to the parent layout
         self.grid(row=0, column=0)
 
     def reset(self):
         pass
+
+    def set_timer(self):
+        setup_window = tk.Toplevel(self.master)
+        setup_window.title("Setup Timer")
+        SimpleTimerSet(setup_window)
 
 
 class MeetupTimer(tk.Frame):
@@ -213,14 +234,21 @@ class MeetupTimer(tk.Frame):
 
         # create the widgets
         self.display = CountDownDisplay(self)
+        self.setup_button = ttk.Button(self, text='Set', command=self.set_timer)
 
         # add the widgets
         self.display.grid(row=0, column=0)
+        self.setup_button.grid(row=1, column=0)
 
         self.grid(row=0, column=0)
 
     def reset(self):
         pass
+
+    def set_timer(self):
+        setup_window = tk.Toplevel(self.master)
+        setup_window.title('Set Timer')
+        MeetupTimerSet(setup_window)
 
 
 class ControlFrame(ttk.Labelframe):
