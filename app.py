@@ -141,29 +141,48 @@ class DigitLabel(tk.Label):
 
 
 class CountDownDisplay(tk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
+    """Frame widget which may contain other widgets.
+
+        STANDARD OPTIONS
+            background, bd, bg, borderwidth,
+            class , colormap, container, cursor, height, highlightbackground,
+            highlightcolor, highlightthickness, relief, takefocus, visual, width.
+        WIDGET SPECIFIC OPTIONS
+            ymd - include the TMD displys
+        """
+    def __init__(self, master, ymd=False, digits=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.ymd = ymd
+        self.digits = digits
+        self.year_digits = None
+        self.month_digits = None
+        self.day_digits = None
+        self.hour_digits = None
+        self.minute_digits = None
+        self.second_digits = None
 
         # create the widgets
-        self.years_label = DigitLabel(self)
-        self.months_label = DigitLabel(self)
-        self.days_label = DigitLabel(self)
+        if ymd:
+            self.years_label = tk.Entry(self)  # DigitLabel(self)
+            self.months_label = DigitLabel(self)
+            self.days_label = DigitLabel(self)
 
         self.hours_label = DigitLabel(self)
         self.minutes_label = DigitLabel(self)
         self.seconds_label = DigitLabel(self)
 
         # add the widgets
-        # years, months, days
-        self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
-        tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
-        self.months_label.grid(row=0, column=2, padx=5, pady=(5, 0))
-        tk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
-        self.days_label.grid(row=0, column=4, padx=5, pady=(5, 0))
+        if ymd:
+            # years, months, days
+            self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
+            tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
+            self.months_label.grid(row=0, column=2, padx=5, pady=(5, 0))
+            tk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
+            self.days_label.grid(row=0, column=4, padx=5, pady=(5, 0))
 
-        tk.Label(self, text='Y').grid(row=1, column=0)
-        tk.Label(self, text='M').grid(row=1, column=2)
-        tk.Label(self, text='D').grid(row=1, column=4)
+            tk.Label(self, text='Y').grid(row=1, column=0)
+            tk.Label(self, text='M').grid(row=1, column=2)
+            tk.Label(self, text='D').grid(row=1, column=4)
 
         # hours, minutes, seconds
         self.hours_label.grid(row=2, column=0, padx=5, pady=(5, 0))
@@ -175,6 +194,13 @@ class CountDownDisplay(tk.Frame):
         tk.Label(self, text='H').grid(row=3, column=0)
         tk.Label(self, text='M').grid(row=3, column=2)
         tk.Label(self, text='S').grid(row=3, column=4)
+
+    def parse_digits(self):
+        if self.digits:
+            if isinstance(self.digits, int):
+                self.year_digits = self.digits
+
+
 
 
 class SimpleTimer(tk.Frame):
@@ -197,14 +223,14 @@ class SimpleTimer(tk.Frame):
         self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
         self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
         self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
-        self.set_button = ttk.Button(self, text='Set', command=self.set_timer)
+        # self.set_button = ttk.Button(self, text='Set', command=self.set_timer)
         # layout the widgets
         self.display.grid(row=0, column=0)
         self.control_frame.grid(row=1, column=0, pady=(5, 10))
         self.start_button.grid(row=0, column=0)
         self.pause_button.grid(row=0, column=1)
         self.stop_button.grid(row=0, column=2)
-        self.set_button.grid(row=2, column=0, pady=5)
+        # self.set_button.grid(row=2, column=0, pady=5)
 
         # add this frame to the parent layout
         self.grid(row=0, column=0)
@@ -233,7 +259,7 @@ class MeetupTimer(tk.Frame):
         super().__init__(master)
 
         # create the widgets
-        self.display = CountDownDisplay(self)
+        self.display = CountDownDisplay(self, ymd=True)
         self.setup_button = ttk.Button(self, text='Set', command=self.set_timer)
 
         # add the widgets
