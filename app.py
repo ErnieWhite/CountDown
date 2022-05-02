@@ -4,7 +4,7 @@ from tkcalendar import Calendar, DateEntry
 import calendar
 from datetime import date
 from typing import Any
-from tkinter import Menu
+import winsound
 
 """Finds actual meet up date based on a date description
 For example, if given "1st Monday of January 2022", the correct meetup date is January 3, 2022.
@@ -113,48 +113,6 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
-# TODO: make this window modal
-class SimpleTimerSet(tk.Frame):
-    def __init__(self, master, **kw):
-        super().__init__(master, **kw)
-        self.ok_button_pressed = False
-        self.cancel_button_pressed = False
-
-        # create the variables to hold the values
-        self.hours_var = tk.IntVar()
-        self.minutes_var = tk.IntVar()
-        self.seconds_var = tk.IntVar()
-
-        # create the widgets
-
-        self.hours_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.hours_var, width=2)
-        self.minutes_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.minutes_var, width=2)
-        self.seconds_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.seconds_var, width=2)
-
-        self.ok_button = tk.Button(self, text='Ok', command=self.ok_pressed)
-        self.cancel_button = tk.Button(self, text='Cancel', command=self.cancel_pressed)
-
-        tk.Label(self, text='Hours').grid(row=1, column=0)
-        self.hours_spin.grid(row=1, column=1)
-        tk.Label(self, text='Minutes').grid(row=1, column=2)
-        self.minutes_spin.grid(row=1, column=3)
-        tk.Label(self, text='Seconds').grid(row=1, column=4)
-        self.seconds_spin.grid(row=1, column=5)
-
-        self.ok_button.grid(row=2, column=0)
-        self.cancel_button.grid(row=2, column=1)
-
-        self.pack()
-
-    def ok_pressed(self):
-        self.ok_button_pressed = True
-        self.master.destroy()
-
-    def cancel_pressed(self):
-        self.cancel_button_pressed = True
-        self.master.destroy()
-
-
 # TODO: make this a modal window
 class MeetupTimerSet(tk.Frame):
     def __init__(self, master, **kw):
@@ -169,9 +127,13 @@ class DigitEntry(tk.Entry):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
 
-        self['background'] = 'black'
-        self['foreground'] = 'green'
-        self.set('00')
+        vcmd = (self.register(self.validate), '%P')
+        ivcmd = (self.register(self.on_invalid), )
+        self['font'] = ('TkDefaultFont', 18)
+        self['validate'] = 'key'
+        self['validatecommand'] = vcmd
+        self['invalidcommand'] = ivcmd
+        self.set('')
 
     def set(self, value):
         """Set the value of the DigitEntry.
@@ -180,6 +142,24 @@ class DigitEntry(tk.Entry):
         """
         self.delete(0, tk.END)
         self.insert(0, str(value))
+
+    def get(self):
+        """Gets the value of the DigitEtnry.
+
+        :return: the int value and 0 if empty
+        """
+        return int(super().get()) if super().get() else 0
+
+    @staticmethod
+    def validate(value):
+        if (value.strip().isdigit() and len(value) <= 2) or value == '':
+            return True
+        return False
+
+    @staticmethod
+    def on_invalid():
+        winsound.Beep(800, 250)
+        winsound.Beep(400, 250)
 
 
 class CountDownDisplay(tk.Frame):
@@ -200,33 +180,33 @@ class CountDownDisplay(tk.Frame):
 
         # create the widgets
         if self.ymd:
-            self.years_label = DigitEntry(self, width=self.digits)  # DigitLabel(self)
-            self.months_label = DigitEntry(self, width=self.digits)
-            self.days_label = DigitEntry(self, width=self.digits)
+            self.years_entry = DigitEntry(self, width=self.digits)  # DigitLabel(self)
+            self.months_entry = DigitEntry(self, width=self.digits)
+            self.days_entry = DigitEntry(self, width=self.digits)
 
-        self.hours_label = DigitEntry(self, width=self.digits)
-        self.minutes_label = DigitEntry(self, width=self.digits)
-        self.seconds_label = DigitEntry(self, width=self.digits)
+        self.hours_entry = DigitEntry(self, width=self.digits)
+        self.minutes_entry = DigitEntry(self, width=self.digits)
+        self.seconds_entry = DigitEntry(self, width=self.digits)
 
         # add the widgets
         if self.ymd:
             # years, months, days
-            self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
+            self.years_entry.grid(row=0, column=0, padx=5, pady=(5, 0))
             tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
-            self.months_label.grid(row=0, column=2, padx=5, pady=(5, 0))
+            self.months_entry.grid(row=0, column=2, padx=5, pady=(5, 0))
             tk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
-            self.days_label.grid(row=0, column=4, padx=5, pady=(5, 0))
+            self.days_entry.grid(row=0, column=4, padx=5, pady=(5, 0))
 
             tk.Label(self, text='Y').grid(row=1, column=0)
             tk.Label(self, text='M').grid(row=1, column=2)
             tk.Label(self, text='D').grid(row=1, column=4)
 
         # hours, minutes, seconds
-        self.hours_label.grid(row=2, column=0, padx=5, pady=(5, 0))
+        self.hours_entry.grid(row=2, column=0, padx=5, pady=(5, 0))
         tk.Label(self, text='|').grid(row=2, column=1, pady=(3, 0))
-        self.minutes_label.grid(row=2, column=2, padx=5, pady=(5, 0))
+        self.minutes_entry.grid(row=2, column=2, padx=5, pady=(5, 0))
         tk.Label(self, text='|').grid(row=2, column=3, pady=(3, 0))
-        self.seconds_label.grid(row=2, column=4, padx=5, pady=(5, 0))
+        self.seconds_entry.grid(row=2, column=4, padx=5, pady=(5, 0))
 
         tk.Label(self, text='H').grid(row=3, column=0)
         tk.Label(self, text='M').grid(row=3, column=2)
@@ -253,25 +233,18 @@ class SimpleTimer(tk.Frame):
         self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
         self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
         self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
-        # self.set_button = ttk.Button(self, text='Set', command=self.set_timer)
         # layout the widgets
         self.display.grid(row=0, column=0)
         self.control_frame.grid(row=1, column=0, pady=(5, 10))
         self.start_button.grid(row=0, column=0)
         self.pause_button.grid(row=0, column=1)
         self.stop_button.grid(row=0, column=2)
-        # self.set_button.grid(row=2, column=0, pady=5)
 
         # add this frame to the parent layout
         self.grid(row=0, column=0)
 
     def reset(self):
         pass
-
-    def set_timer(self):
-        setup_window = tk.Toplevel(self.master)
-        setup_window.title("Setup Timer")
-        SimpleTimerSet(setup_window)
 
 
 class MeetupTimer(tk.Frame):
@@ -354,6 +327,18 @@ class ControlFrame(ttk.Labelframe):
 class Model:
     def __init__(self):
         super().__init__()
+        self.meetup_years = 0
+        self.meetup_months = 0
+        self.meetup_days = 0
+        self.meetup_hours = 0
+        self.meetup_minutes = 0
+        self.meetup_seconds = 0
+        self.meetup_hundredths = 0
+        self.simple_hours = 0
+        self.simple_minutes = 0
+        self.simple_seconds = 0
+        self.simple_hundredths = 0
+        self.simple_paused = False
 
 
 class View(tk.Frame):
@@ -372,8 +357,9 @@ class View(tk.Frame):
 
 
 class Controller:
-    def __init__(self, model, view):
+    def __init__(self, master, model, view):
         super().__init__()
+        self.master = master
         self.model = model
         self.view = view
         self.set_command_handlers()
@@ -397,13 +383,59 @@ class Controller:
                 self.view.frames[f].grid_remove()
 
     def simple_timer_start(self):
-        pass
+        self.model.simple_hours = self.view.frames['Simple'].display.hours_entry.get()
+        self.model.simple_minutes = self.view.frames['Simple'].display.minutes_entry.get()
+        self.model.simple_seconds = self.view.frames['Simple'].display.seconds_entry.get()
+        self.model.simple_timer_running = True
+        self.model.simple_timer_paused = False
+        self.simple_timer_run()
 
     def simple_timer_pause(self):
-        pass
+        self.model.simple_paused = not self.model.simple_paused
 
     def simple_timer_stop(self):
-        pass
+        # reset the display to all 0's
+        # make all displays editable
+        self.model.simple_timer_running = False
+        self.view.frames['Simple'].display.hours_entry.set('')
+        self.view.frames['Simple'].display.minutes_entry.set('')
+        self.view.frames['Simple'].display.seconds_entry.set('')
+
+        self.view.frames['Simple'].display.hours_entry['state'] = 'normal'
+        self.view.frames['Simple'].display.minutes_entry['state'] = 'normal'
+        self.view.frames['Simple'].display.seconds_entry['state'] = 'normal'
+
+    def simple_timer_run(self):
+        print(self.model.simple_hours, self.model.simple_minutes, self.model.simple_seconds, self.model.simple_hundredths)
+        if not self.model.simple_timer_running:
+            return
+        if self.model.simple_paused:
+            self.master.after(1000, self.simple_timer_run)
+            return
+        if self.model.simple_seconds > 1:
+            self.model.simple_seconds -= 1
+        elif self.model.simple_minutes > 0:
+            self.model.simple_minutes -= 1
+            self.model.simple_seconds = 59
+        elif self.model.simple_hours > 0:
+            self.model.simple_hours -= 1
+            self.model.simple_minutes = 59
+            self.model.simple_seconds = 59
+        else:
+            if self.model.simple_timer_running:
+                self.model.simple_seconds = 0
+                self.update_simple_display()
+                self.master.update()
+                winsound.Beep(450, 500)
+                return
+        self.update_simple_display()
+        if self.model.simple_timer_running:
+            self.master.after(1000, self.simple_timer_run)
+
+    def update_simple_display(self):
+        self.view.frames['Simple'].display.hours_entry.set(self.model.simple_hours)
+        self.view.frames['Simple'].display.minutes_entry.set(self.model.simple_minutes)
+        self.view.frames['Simple'].display.seconds_entry.set(self.model.simple_seconds)
 
 
 class App(tk.Tk):
@@ -416,7 +448,7 @@ class App(tk.Tk):
         view = View(self)
         model = Model()
 
-        Controller(model, view)
+        Controller(self, model, view)
 
 
 if __name__ == "__main__":
