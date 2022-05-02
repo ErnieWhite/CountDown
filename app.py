@@ -113,15 +113,49 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
+# TODO: make this window modal
 class SimpleTimerSet(tk.Frame):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
+        self.ok_button_pressed = False
+        self.cancel_button_pressed = False
 
-        tk.Label(self, text="Hello from the simple timer setup").pack()
+        # create the variables to hold the values
+        self.hours_var = tk.IntVar()
+        self.minutes_var = tk.IntVar()
+        self.seconds_var = tk.IntVar()
+
+        # create the widgets
+
+        self.hours_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.hours_var, width=2)
+        self.minutes_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.minutes_var, width=2)
+        self.seconds_spin = tk.Spinbox(self, from_=0, to=99, textvariable=self.seconds_var, width=2)
+
+        self.ok_button = tk.Button(self, text='Ok', command=self.ok_pressed)
+        self.cancel_button = tk.Button(self, text='Cancel', command=self.cancel_pressed)
+
+        tk.Label(self, text='Hours').grid(row=1, column=0)
+        self.hours_spin.grid(row=1, column=1)
+        tk.Label(self, text='Minutes').grid(row=1, column=2)
+        self.minutes_spin.grid(row=1, column=3)
+        tk.Label(self, text='Seconds').grid(row=1, column=4)
+        self.seconds_spin.grid(row=1, column=5)
+
+        self.ok_button.grid(row=2, column=0)
+        self.cancel_button.grid(row=2, column=1)
 
         self.pack()
 
+    def ok_pressed(self):
+        self.ok_button_pressed = True
+        self.master.destroy()
 
+    def cancel_pressed(self):
+        self.cancel_button_pressed = True
+        self.master.destroy()
+
+
+# TODO: make this a modal window
 class MeetupTimerSet(tk.Frame):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
@@ -131,13 +165,21 @@ class MeetupTimerSet(tk.Frame):
         self.pack()
 
 
-class DigitLabel(tk.Label):
+class DigitEntry(tk.Entry):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
 
         self['background'] = 'black'
         self['foreground'] = 'green'
-        self['text'] = '00'
+        self.set('00')
+
+    def set(self, value):
+        """Set the value of the DigitEntry.
+
+        This is probably a bad idea for some reason
+        """
+        self.delete(0, tk.END)
+        self.insert(0, str(value))
 
 
 class CountDownDisplay(tk.Frame):
@@ -149,30 +191,25 @@ class CountDownDisplay(tk.Frame):
             highlightcolor, highlightthickness, relief, takefocus, visual, width.
         WIDGET SPECIFIC OPTIONS
             ymd - include the TMD displys
+            digits - the number of digits per display field
         """
     def __init__(self, master, ymd=False, digits=None, **kwargs):
         super().__init__(master, **kwargs)
         self.ymd = ymd
         self.digits = digits
-        self.year_digits = None
-        self.month_digits = None
-        self.day_digits = None
-        self.hour_digits = None
-        self.minute_digits = None
-        self.second_digits = None
 
         # create the widgets
-        if ymd:
-            self.years_label = tk.Entry(self)  # DigitLabel(self)
-            self.months_label = DigitLabel(self)
-            self.days_label = DigitLabel(self)
+        if self.ymd:
+            self.years_label = DigitEntry(self, width=self.digits)  # DigitLabel(self)
+            self.months_label = DigitEntry(self, width=self.digits)
+            self.days_label = DigitEntry(self, width=self.digits)
 
-        self.hours_label = DigitLabel(self)
-        self.minutes_label = DigitLabel(self)
-        self.seconds_label = DigitLabel(self)
+        self.hours_label = DigitEntry(self, width=self.digits)
+        self.minutes_label = DigitEntry(self, width=self.digits)
+        self.seconds_label = DigitEntry(self, width=self.digits)
 
         # add the widgets
-        if ymd:
+        if self.ymd:
             # years, months, days
             self.years_label.grid(row=0, column=0, padx=5, pady=(5, 0))
             tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
@@ -195,13 +232,6 @@ class CountDownDisplay(tk.Frame):
         tk.Label(self, text='M').grid(row=3, column=2)
         tk.Label(self, text='S').grid(row=3, column=4)
 
-    def parse_digits(self):
-        if self.digits:
-            if isinstance(self.digits, int):
-                self.year_digits = self.digits
-
-
-
 
 class SimpleTimer(tk.Frame):
     """Creates a simple countdown timer
@@ -217,7 +247,7 @@ class SimpleTimer(tk.Frame):
 
         # create the widgets
 
-        self.display = CountDownDisplay(self)
+        self.display = CountDownDisplay(self, digits=2)
         # put the controls in a frame to control the spacing
         self.control_frame = tk.Frame(self)
         self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
@@ -259,7 +289,7 @@ class MeetupTimer(tk.Frame):
         super().__init__(master)
 
         # create the widgets
-        self.display = CountDownDisplay(self, ymd=True)
+        self.display = CountDownDisplay(self, ymd=True, digits=2)
         self.setup_button = ttk.Button(self, text='Set', command=self.set_timer)
 
         # add the widgets
@@ -275,6 +305,7 @@ class MeetupTimer(tk.Frame):
         setup_window = tk.Toplevel(self.master)
         setup_window.title('Set Timer')
         MeetupTimerSet(setup_window)
+        print('hello')
 
 
 class ControlFrame(ttk.Labelframe):
@@ -306,7 +337,6 @@ class ControlFrame(ttk.Labelframe):
             text="Simple",
             value="Simple",
             variable=self.timer_type_var,
-            command=self.change_timer_type,
         )
 
         self.meetup_radio = ttk.Radiobutton(
@@ -314,29 +344,66 @@ class ControlFrame(ttk.Labelframe):
             text="Meetup",
             value="Meetup",
             variable=self.timer_type_var,
-            command=self.change_timer_type,
         )
 
         # add the radios to the parent
         self.timer_radio.grid(row=0, column=0, padx=5, pady=5)
         self.meetup_radio.grid(row=0, column=1, padx=5, pady=5)
 
-        # store the two different timer type frames in a dictionary
+
+class Model:
+    def __init__(self):
+        super().__init__()
+
+
+class View(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+
         self.frames = {
-            'Simple': SimpleTimer(master),
-            'Meetup': MeetupTimer(master),
+            'Simple': SimpleTimer(self),
+            'Meetup': MeetupTimer(self),
         }
+        self.timer_type = ControlFrame(self)
+
+        self.frames['Simple'].grid(row=0, column=0)
+        self.timer_type.grid(row=1, column=0)
+        self.pack()
+
+
+class Controller:
+    def __init__(self, model, view):
+        super().__init__()
+        self.model = model
+        self.view = view
+        self.set_command_handlers()
 
         self.change_timer_type()
 
+    def set_command_handlers(self):
+        self.view.timer_type.timer_radio['command'] = self.change_timer_type
+        self.view.timer_type.meetup_radio['command'] = self.change_timer_type
+        self.view.frames['Simple'].start_button['command'] = self.simple_timer_start
+        self.view.frames['Simple'].pause_button['command'] = self.simple_timer_pause
+        self.view.frames['Simple'].stop_button['command'] = self.simple_timer_stop
+
     def change_timer_type(self):
-        for f in self.frames:
-            if f == self.timer_type_var.get():
-                frame = self.frames[self.timer_type_var.get()]
+        for f in self.view.frames:
+            if f == self.view.timer_type.timer_type_var.get():
+                frame = self.view.frames[self.view.timer_type.timer_type_var.get()]
                 frame.reset()
                 frame.grid(row=0, column=0)
             else:
-                self.frames[f].grid_remove()
+                self.view.frames[f].grid_remove()
+
+    def simple_timer_start(self):
+        pass
+
+    def simple_timer_pause(self):
+        pass
+
+    def simple_timer_stop(self):
+        pass
 
 
 class App(tk.Tk):
@@ -346,8 +413,12 @@ class App(tk.Tk):
         self.title('Countdown Timer')
         self.resizable(False, False)
 
+        view = View(self)
+        model = Model()
+
+        Controller(model, view)
+
 
 if __name__ == "__main__":
     app = App()
-    ControlFrame(app)
     app.mainloop()
