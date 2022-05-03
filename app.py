@@ -4,7 +4,6 @@ from tkcalendar import Calendar, DateEntry
 import calendar
 from datetime import date
 from typing import Any
-import winsound
 
 """Finds actual meet up date based on a date description
 For example, if given "1st Monday of January 2022", the correct meetup date is January 3, 2022.
@@ -156,10 +155,9 @@ class DigitEntry(tk.Entry):
             return True
         return False
 
-    @staticmethod
-    def on_invalid():
-        winsound.Beep(800, 250)
-        winsound.Beep(400, 250)
+    def on_invalid(self):
+        self.bell()
+        self.bell()
 
 
 class CountDownDisplay(tk.Frame):
@@ -426,7 +424,7 @@ class Controller:
                 self.model.simple_seconds = 0
                 self.update_simple_display()
                 self.master.update()
-                winsound.Beep(450, 500)
+                self.view.bell()
                 return
         self.update_simple_display()
         if self.model.simple_timer_running:
