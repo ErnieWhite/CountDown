@@ -337,6 +337,8 @@ class Model:
         self.simple_seconds = 0
         self.simple_hundredths = 0
         self.simple_paused = False
+        self.simple_timer_first_run = True
+
 
 
 class View(tk.Frame):
@@ -386,6 +388,7 @@ class Controller:
         self.model.simple_seconds = self.view.frames['Simple'].display.seconds_entry.get()
         self.model.simple_timer_running = True
         self.model.simple_timer_paused = False
+        self.model.simple_timer_first_run = True
         self.simple_timer_run()
 
     def simple_timer_pause(self):
