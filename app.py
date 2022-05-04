@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkcalendar import Calendar, DateEntry
 import calendar
+import datetime
 from datetime import date
 from typing import Any
 
@@ -26,6 +27,9 @@ class MeetupDate:
 
     For example, if given "1st Monday of January 2022", the correct meetup date is January 3, 2022.
     """
+
+    occurrences = {'First': 1, 'Second': 2, 'Third': 3, 'Fourth': 4, 'Fifth': 5, 'Teenth': 13, 'Last': 99}
+    days_of_week = {'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6}
 
     @staticmethod
     def find_last_occurrence(year, month, week_day):
@@ -96,10 +100,17 @@ class MeetupDate:
 
     @staticmethod
     def meetup(year, month, week, day_of_week):
-        occurrences = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, 'teenth': 13, 'last': 99}
-        days_of_week = {'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6}
-        occurrence = occurrences[week]
-        week_day = days_of_week[day_of_week]
+        """Calculate the next occurrence of meetup date
+        :param year: The year to start looking for the next meetup
+        :param month: The month to start looking for the next meetup
+        :param week: The week of the meetup (first, second, third, fourth, fifth, teenth, last)
+        teenth is the days from 13 - 19
+        :param day_of_week: The weekday name
+        """
+        # occurrences = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, 'teenth': 13, 'last': 99}
+        # days_of_week = {'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6}
+        occurrence = MeetupDate.occurrences[week]
+        week_day = MeetupDate.days_of_week[day_of_week]
 
         # find the last occurrence of the day of week
         if occurrence == 99:  # the last occurrence
@@ -117,9 +128,54 @@ class MeetupTimerSet(tk.Frame):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
 
-        tk.Label(self, text="Hello from the meetup timer setup").pack()
+        yvcmd = (self.register(self.validate_year), '%P')
+        yivcmd = (self.register(self.on_invalid_year), '%P')
+
+        mvcmd = (self.register(self.validate_month), '%P')
+        mivcmd = (self.register(self.on_invalid_month), '%P')
+
+        self.year_digit = DigitEntry(self, width=4)
+        self.month_digit = DigitEntry(self, width=2)
+        self.week_combo = ttk.Combobox(self, width=6)
+        self.day_of_week_combo = ttk.Combobox(self, width=9)
+        self.okay_button = ttk.Button(self, text="Ok")
+        self.cancel_button = ttk.Button(self, text="Cancel")
+
+        tk.Label(self, text='Year').grid(row=0, column=0, sticky='w')
+        tk.Label(self, text='Month').grid(row=1, column=0, sticky='w')
+        tk.Label(self, text='Week').grid(row=2, column=0, sticky='w')
+        tk.Label(self, text='Day of Week').grid(row=3, column=0, sticky='w')
+        self.year_digit.grid(row=0, column=1, sticky='ew')
+        self.month_digit.grid(row=1, column=1, sticky='ew')
+        self.week_combo.grid(row=2, column=1, sticky='ew')
+        self.day_of_week_combo.grid(row=3, column=1, sticky='ew')
+        self.okay_button.grid(row=4, column=0)
+        self.cancel_button.grid(row=4, column=1)
+
+        self.week_combo['values'] = list(MeetupDate.occurrences)
+        self.day_of_week_combo['values'] = list(MeetupDate.days_of_week)
+        self.week_combo.set(list(MeetupDate.occurrences)[0])
+        self.day_of_week_combo.set(list(MeetupDate.days_of_week)[0])
 
         self.pack()
+
+    def validate_year(self, value):
+        if (value.strip().isdigit() and len(value) <= 4) or value == '':
+            return True
+        return False
+
+    def on_invalid(self):
+        self.master.Beep()
+        self.master.Beep()
+
+    def on_invalid_year(self):
+        pass
+
+    def validate_month(self, v):
+        return True
+
+    def on_invalid_month(self):
+        pass
 
 
 class DigitEntry(tk.Entry):
@@ -140,7 +196,7 @@ class DigitEntry(tk.Entry):
         This is probably a bad idea for some reason
         """
         self.delete(0, tk.END)
-        self.insert(0, str(value))
+        self.insert(0, f'{value:02}')
 
     def get(self):
         """Gets the value of the DigitEtnry.
@@ -247,14 +303,6 @@ class SimpleTimer(tk.Frame):
 
 class MeetupTimer(tk.Frame):
     """Creates a meetup countdown timer
-
-    This timer counts down to a certain date or a generic
-
-    The first 3/4 of the time is green.
-
-    The next 3/16 of the time is yellow.
-
-    The last 3/64 of the time is red.
     """
     def __init__(self, master):
         super().__init__(master)
