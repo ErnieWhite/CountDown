@@ -281,21 +281,40 @@ class SimpleTimer(tk.Frame):
 
         # create the widgets
 
-        self.display = CountDownDisplay(self, digits=2)
+        # self.display = CountDownDisplay(self, digits=2)
+        self.display_frame = ttk.Frame(self)
+        self.hours_entry = ttk.Entry(self.display_frame, width=2)
+        self.minutes_entry = ttk.Entry(self.display_frame, width=2)
+        self.seconds_entry = ttk.Entry(self.display_frame, width=2)
+
         # put the controls in a frame to control the spacing
         self.control_frame = tk.Frame(self)
         self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
         self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
         self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
+
         # layout the widgets
-        self.display.grid(row=0, column=0)
-        self.control_frame.grid(row=1, column=0, pady=(5, 10))
+
+        # dsiplay frame
+        self.hours_entry.grid(row=0, column=0)
+        ttk.Label(text=" | ").grid(row=0, column=1)
+        self.minutes_entry.grid(row=0, column=2)
+        ttk.Label(self.display_frame, text=' | ').grid(row=0, column=3)
+        self.seconds_entry.grid(row=0, column=4)
+        ttk.Label(self.display_frame, text='H').grid(row=1, column=0)
+        ttk.Label(self.display_frame, text='M').grid(row=1, column=2)
+        ttk.Label(self.display_frame, text='S').grid(row=1, column=4)
+
+        self.display_frame.pack()
+
+        # control frame
         self.start_button.grid(row=0, column=0)
         self.pause_button.grid(row=0, column=1)
         self.stop_button.grid(row=0, column=2)
+        self.control_frame.pack()  # (row=1, column=0, pady=(5, 10))
 
         # add this frame to the parent layout
-        self.grid(row=0, column=0)
+        # self.grid(row=0, column=0)
 
     def reset(self):
         pass
@@ -315,7 +334,7 @@ class MeetupTimer(tk.Frame):
         self.display.grid(row=0, column=0)
         self.setup_button.grid(row=1, column=0)
 
-        self.grid(row=0, column=0)
+        # self.grid(row=0, column=0)
 
     def reset(self):
         pass
@@ -327,81 +346,64 @@ class MeetupTimer(tk.Frame):
         print('hello')
 
 
-class ControlFrame(ttk.Labelframe):
-    """Controls which timer frame is displayed.
-
-    There are two timer types:
-        Simple timer - Counts down based on the user entered years, months, days, hours, minutes, seconds.
-
-        Meetup timer - Counts down the time until the next occurrence of the meetup date
-
-    The default is the simple timer
-    """
-    def __init__(self, master):
-        super().__init__(master)
-
-        self['text'] = 'Timer Type'
-
-        # create the radio buttons
-
-        self.timer_type_var = tk.StringVar()
-
-        # make the simple timer the default
-        self.timer_type_var.set('Simple')
-
-        self.grid(row=1, column=0)
-
-        self.timer_radio = ttk.Radiobutton(
-            self,
-            text="Simple",
-            value="Simple",
-            variable=self.timer_type_var,
-        )
-
-        self.meetup_radio = ttk.Radiobutton(
-            self,
-            text="Meetup",
-            value="Meetup",
-            variable=self.timer_type_var,
-        )
-
-        # add the radios to the parent
-        self.timer_radio.grid(row=0, column=0, padx=5, pady=5)
-        self.meetup_radio.grid(row=0, column=1, padx=5, pady=5)
-
-
-class Model:
-    def __init__(self):
-        super().__init__()
-        self.meetup_years = 0
-        self.meetup_months = 0
-        self.meetup_days = 0
-        self.meetup_hours = 0
-        self.meetup_minutes = 0
-        self.meetup_seconds = 0
-        self.meetup_hundredths = 0
-        self.simple_hours = 0
-        self.simple_minutes = 0
-        self.simple_seconds = 0
-        self.simple_hundredths = 0
-        self.simple_paused = False
-        self.simple_timer_first_run = True
-
+# class ControlFrame(ttk.Labelframe):
+#     """Controls which timer frame is displayed.
+#
+#     There are two timer types:
+#         Simple timer - Counts down based on the user entered years, months, days, hours, minutes, seconds.
+#
+#         Meetup timer - Counts down the time until the next occurrence of the meetup date
+#
+#     The default is the simple timer
+#     """
+#     def __init__(self, master):
+#         super().__init__(master)
+#
+#         self['text'] = 'Timer Type'
+#
+#         # create the radio buttons
+#
+#         self.timer_type_var = tk.StringVar()
+#
+#         # make the simple timer the default
+#         self.timer_type_var.set('Simple')
+#
+#         self.grid(row=1, column=0)
+#
+#         self.timer_radio = ttk.Radiobutton(
+#             self,
+#             text="Simple",
+#             value="Simple",
+#             variable=self.timer_type_var,
+#         )
+#
+#         self.meetup_radio = ttk.Radiobutton(
+#             self,
+#             text="Meetup",
+#             value="Meetup",
+#             variable=self.timer_type_var,
+#         )
+#
+#         # add the radios to the parent
+#         self.timer_radio.grid(row=0, column=0, padx=5, pady=5)
+#         self.meetup_radio.grid(row=0, column=1, padx=5, pady=5)
 
 
 class View(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
-        self.frames = {
-            'Simple': SimpleTimer(self),
-            'Meetup': MeetupTimer(self),
-        }
-        self.timer_type = ControlFrame(self)
+        self.notebook = ttk.Notebook(self)
+        simple_timer = SimpleTimer(self.notebook)
+        meetup_timer = MeetupTimer(self.notebook)
+        simple_timer.pack(fill='both', expand=True)
+        meetup_timer.pack(fill='both', expand=True)
+        self.notebook.add(simple_timer, text='Timer')
+        self.notebook.add(meetup_timer, text='Meetup')
 
-        self.frames['Simple'].grid(row=0, column=0)
-        self.timer_type.grid(row=1, column=0)
-        self.pack()
+        self.notebook.pack()
+
+        self.pack(expand=True)
 
 
 class Controller:
@@ -495,9 +497,8 @@ class App(tk.Tk):
         self.resizable(False, False)
 
         view = View(self)
-        model = Model()
 
-        Controller(self, model, view)
+        # Controller(self, model, view)
 
 
 if __name__ == "__main__":
