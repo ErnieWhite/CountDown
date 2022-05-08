@@ -283,23 +283,23 @@ class SimpleTimer(tk.Frame):
 
         # self.display = CountDownDisplay(self, digits=2)
         self.display_frame = ttk.Frame(self)
-        self.hours_entry = ttk.Entry(self.display_frame, width=2)
-        self.minutes_entry = ttk.Entry(self.display_frame, width=2)
-        self.seconds_entry = ttk.Entry(self.display_frame, width=2)
+        self.hours_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
+        self.minutes_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
+        self.seconds_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
 
         # put the controls in a frame to control the spacing
         self.control_frame = tk.Frame(self)
-        self.start_button = ttk.Button(self.control_frame, text='\u25b6', width=2)
-        self.stop_button = ttk.Button(self.control_frame, text='\u25A0', width=2)
-        self.pause_button = ttk.Button(self.control_frame, text='\u2016', width=2)
+        self.start_button = tk.Button(self.control_frame, text='\u25b6', width=2, font=('TkDefaultFont', 18))
+        self.stop_button = tk.Button(self.control_frame, text='\u25A0', width=2, font=('TkDefaultFont', 18))
+        self.pause_button = tk.Button(self.control_frame, text='\u2016', width=2, font=('TkDefaultFont', 18))
 
         # layout the widgets
 
-        # dsiplay frame
+        # display frame
         self.hours_entry.grid(row=0, column=0)
-        ttk.Label(text=" | ").grid(row=0, column=1)
+        ttk.Label(self.display_frame, text=" | ", font=('TkDefaultFont', 18)).grid(row=0, column=1)
         self.minutes_entry.grid(row=0, column=2)
-        ttk.Label(self.display_frame, text=' | ').grid(row=0, column=3)
+        ttk.Label(self.display_frame, text=' | ', font=('TkDefaultFont', 18)).grid(row=0, column=3)
         self.seconds_entry.grid(row=0, column=4)
         ttk.Label(self.display_frame, text='H').grid(row=1, column=0)
         ttk.Label(self.display_frame, text='M').grid(row=1, column=2)
@@ -403,7 +403,7 @@ class View(tk.Frame):
 
         self.notebook.pack()
 
-        self.pack(expand=True)
+        self.grid(row=0, column=0)
 
 
 class Controller:
