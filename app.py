@@ -279,19 +279,75 @@ class SimpleTimer(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
+        self.time_left = 0
+        self.paused = False
+        self.stopped = False
+        self.running = False
+
+        # create some validation variables
+        vcmd = (self.register(self.validate), '%P')
+        ivcmd = (self.register(self.on_invalid), '%P')
+
+        # create our text variables
+        self.hours_var = tk.IntVar()
+        self.minutes_var = tk.IntVar()
+        self.seconds_var = tk.IntVar()
+
         # create the widgets
 
         # self.display = CountDownDisplay(self, digits=2)
         self.display_frame = ttk.Frame(self)
-        self.hours_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
-        self.minutes_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
-        self.seconds_entry = ttk.Entry(self.display_frame, width=2, font=('TkDefaultFont', 18))
+        self.hours_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.hours_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', 18),
+        )
+        self.minutes_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.minutes_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', 18),
+        )
+        self.seconds_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.seconds_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', 18),
+        )
 
         # put the controls in a frame to control the spacing
         self.control_frame = tk.Frame(self)
-        self.start_button = tk.Button(self.control_frame, text='\u25b6', width=2, font=('TkDefaultFont', 18))
-        self.stop_button = tk.Button(self.control_frame, text='\u25A0', width=2, font=('TkDefaultFont', 18))
-        self.pause_button = tk.Button(self.control_frame, text='\u2016', width=2, font=('TkDefaultFont', 18))
+        self.start_button = tk.Button(
+            self.control_frame,
+            text='\u25b6',
+            width=2,
+            font=('TkDefaultFont', 18),
+            command=self.timer_start,
+        )
+        self.stop_button = tk.Button(
+            self.control_frame,
+            text='\u25A0',
+            width=2,
+            font=('TkDefaultFont', 18),
+            command=self.timer_stop,
+        )
+        self.pause_button = tk.Button(
+            self.control_frame,
+            text='\u2016',
+            width=2,
+            font=('TkDefaultFont', 18),
+            command=self.timer_pause,
+        )
 
         # layout the widgets
 
@@ -316,8 +372,65 @@ class SimpleTimer(tk.Frame):
         # add this frame to the parent layout
         # self.grid(row=0, column=0)
 
-    def reset(self):
-        pass
+    def clear_timer(self):
+        self.hours_var.set('0')
+        self.minutes_var.set('0')
+        self.seconds_var.set('0')
+
+    def get_HMS(self):
+        """Returns a tuple (hours, minutes, seconds)"""
+        seconds = self.time_left
+        hours = seconds // 3600
+        seconds -= hours * 3600
+        minutes = seconds // 60
+        seconds -= minutes * 60
+        return hours, minutes, seconds
+
+    def update_display(self, hours, minutes, seconds):
+        self.hours_var.set(hours)
+        self.minutes_var.set(minutes)
+        self.seconds_var.set(seconds)
+
+    def tick(self):
+        if self.stopped:
+            self.clear_timer()
+            return
+        if not self.paused:
+            if self.time_left > 0:
+                self.time_left -= 1
+            hours, minutes, seconds = self.get_HMS()
+            self.update_display(hours, minutes, seconds)
+
+        self.after(1000, self.tick)
+
+    def timer_start(self):
+        print('start')
+        hours = int(self.hours_var.get()) if self.hours_var.get() else 0
+        minutes = int(self.minutes_var.get()) if self.minutes_var.get() else 0
+        seconds = int(self.seconds_var.get()) if self.seconds_var.get() else 0
+        self.time_left = hours * 3600 + minutes * 60 + seconds
+        self.tick()
+
+    def timer_pause(self):
+        print('pause')
+        self.paused = not self.paused
+
+    def timer_stop(self):
+        self.stopped = True
+
+    def validate(self, value):
+        print(f'validate: {value}')
+        # can only have 2 digits
+        if len(value) > 2:
+            return False
+        # can only be digits
+        for c in value:
+            if not c.isdigit():
+                return False
+        return True
+
+    def on_invalid(self, _):
+        self.bell()
 
 
 class MeetupTimer(tk.Frame):
