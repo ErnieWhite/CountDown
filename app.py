@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+
 from tkcalendar import Calendar, DateEntry
 import calendar
 import datetime
@@ -123,6 +124,294 @@ class MeetupDate:
         return MeetupDate.find_nth_occurrence(year, month, week_day, occurrence)
 
 
+# class DigitEntry(tk.Entry):
+#     def __init__(self, master, **kw):
+#         super().__init__(master, **kw)
+#
+#         vcmd = (self.register(self.validate), '%P')
+#         ivcmd = (self.register(self.on_invalid), )
+#         self['font'] = ('TkDefaultFont', 18)
+#         self['validate'] = 'key'
+#         self['validatecommand'] = vcmd
+#         self['invalidcommand'] = ivcmd
+#         self.set('')
+#
+#     def set(self, value):
+#         """Set the value of the DigitEntry.
+#
+#         This is probably a bad idea for some reason
+#         """
+#         self.delete(0, tk.END)
+#         self.insert(0, f'{value:02}')
+#
+#     def get(self):
+#         """Gets the value of the DigitEtnry.
+#
+#         :return: the int value and 0 if empty
+#         """
+#         return int(super().get()) if super().get() else 0
+#
+#     @staticmethod
+#     def validate(value):
+#         if (value.strip().isdigit() and len(value) <= 2) or value == '':
+#             return True
+#         return False
+#
+#     def on_invalid(self):
+#         self.bell()
+#         self.bell()
+
+
+class SimpleTimer(tk.Frame):
+    """Creates a simple countdown timer"""
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.time_left = 0
+        self.paused = False
+        self.stopped = False
+        self.running = False
+
+        self.font_size = 24
+        # create some validation variables
+        vcmd = (self.register(self.validate), '%P')
+        ivcmd = (self.register(self.on_invalid), '%P')
+
+        # create our text variables
+        self.hours_var = tk.StringVar()
+        self.minutes_var = tk.StringVar()
+        self.seconds_var = tk.StringVar()
+
+        # create the widgets
+
+        # self.display = CountDownDisplay(self, digits=2)
+        self.display_frame = ttk.Frame(self)
+        self.hours_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.hours_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', self.font_size),
+        )
+        self.minutes_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.minutes_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', self.font_size),
+        )
+        self.seconds_entry = ttk.Entry(
+            self.display_frame,
+            width=2,
+            textvariable=self.seconds_var,
+            validate='key',
+            validatecommand=vcmd,
+            invalidcommand=ivcmd,
+            font=('TkDefaultFont', self.font_size),
+        )
+
+        # put the controls in a frame to control the spacing
+        self.control_frame = tk.Frame(self)
+        self.start_button = tk.Button(
+            self.control_frame,
+            text='\u25b6',
+            width=2,
+            font=('TkDefaultFont', self.font_size),
+            command=self.timer_start,
+        )
+        self.stop_button = tk.Button(
+            self.control_frame,
+            text='\u25A0',
+            width=2,
+            font=('TkDefaultFont', self.font_size),
+            command=self.timer_stop,
+            state=tk.DISABLED,
+        )
+        self.pause_button = tk.Button(
+            self.control_frame,
+            text='\u2016',
+            width=2,
+            font=('TkDefaultFont', self.font_size),
+            command=self.timer_pause,
+            state=tk.DISABLED,
+        )
+
+        # layout the widgets
+
+        # display frame
+        self.hours_entry.grid(row=0, column=0, padx=5, pady=5)
+        ttk.Separator(self.display_frame, orient='vertical').grid(row=0, column=1, sticky=(tk.N, tk.S), rowspan=2)
+        self.minutes_entry.grid(row=0, column=2, pady=5, padx=5)
+        ttk.Separator(self.display_frame, orient='vertical').grid(row=0, column=3, sticky="ns", rowspan=2)
+        self.seconds_entry.grid(row=0, column=4, padx=5, pady=5)
+        ttk.Label(self.display_frame, text='H').grid(row=1, column=0)
+        ttk.Label(self.display_frame, text='M').grid(row=1, column=2)
+        ttk.Label(self.display_frame, text='S').grid(row=1, column=4)
+
+        self.display_frame.grid(sticky='nswe')
+
+        # control frame
+        self.start_button.grid(row=0, column=0, sticky='s', pady=(10, 0))
+        self.pause_button.grid(row=0, column=1, sticky='s')
+        self.stop_button.grid(row=0, column=2, sticky='s')
+        self.control_frame.grid()  # (row=1, column=0, pady=(5, 10))
+
+        # add this frame to the parent layout
+        # self.grid(row=0, column=0)
+        self.rowconfigure(0, weight=2)
+        self.clear_timer()
+
+    def clear_timer(self):
+        """Sets the hour, minutes, seconds entry widgets to empty strings"""
+        self.hours_var.set('')
+        self.minutes_var.set('')
+        self.seconds_var.set('')
+
+    def reset(self):
+        """Resets the timer back to it's initial condition"""
+        self.clear_timer()
+        self.set_state(tk.NORMAL)
+        self.running = False
+        self.paused = False
+        self.stopped = False
+        self.time_left = 0
+        self.start_button.config(state=tk.NORMAL)
+        self.pause_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.DISABLED)
+
+    def get_HMS(self):
+        """Returns a tuple (hours, minutes, seconds)"""
+        seconds = self.time_left
+        hours = seconds // 3600
+        seconds -= hours * 3600
+        minutes = seconds // 60
+        seconds -= minutes * 60
+        return hours, minutes, seconds
+
+    def update_display(self, hours, minutes, seconds):
+        """Updates the hours, minutes and seconds display
+
+        :param hours: hours left to count down
+        :param minutes: minutes left to count down
+        :param seconds: seconds left to count down"""
+        self.hours_var.set(hours)
+        self.minutes_var.set(minutes)
+        self.seconds_var.set(seconds)
+
+    def tick(self):
+        """Updates the time left, checks the stopped and paused flags, schedules the next call to tick"""
+        if self.stopped:
+            self.reset()
+            return
+        if not self.paused:
+            if self.time_left > 0:
+                self.time_left -= 1
+            hours, minutes, seconds = self.get_HMS()
+            self.update_display(hours, minutes, seconds)
+        self.after(1000, self.tick)
+
+    def timer_start(self):
+        """Sets up the timer to run and starts the callback tick"""
+        hours = int(self.hours_var.get()) if self.hours_var.get() else 0
+        minutes = int(self.minutes_var.get()) if self.minutes_var.get() else 0
+        seconds = int(self.seconds_var.get()) if self.seconds_var.get() else 0
+        self.running = True
+        self.set_state(tk.DISABLED)
+        self.pause_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.NORMAL)
+        self.start_button.config(state=tk.DISABLED)
+        self.time_left = hours * 3600 + minutes * 60 + seconds
+        self.tick()
+
+    def timer_pause(self):
+        """Toggles the paused flag"""
+        self.paused = not self.paused
+
+    def set_state(self, state):
+        """Changes the state of the hour, minute, second entry widgets
+
+        :param state: The state to put the h/m/s displays in
+
+        VALID STATES
+            TKINTER CONSTANTS
+                NORMAL | DISABLED
+
+            STRINGS
+                'normal' | 'readonly'
+        """
+        self.hours_entry.config(state=state)
+        self.minutes_entry.config(state=state)
+        self.seconds_entry.config(state=state)
+
+    def timer_stop(self):
+        """Sets the stopped flag and disables the stop button"""
+        self.stopped = True
+        self.stop_button.config(state=tk.DISABLED)
+
+    def validate(self, value):
+        """Verifies that value is an integer in the range 0-99
+
+        :param value: The value the widget will have if we return True"""
+        # can only have 2 digits
+        if len(value) > 2:
+            return False
+        # can only be digits
+        for c in value:
+            if not c.isdigit():
+                return False
+        return True
+
+    def on_invalid(self, _):
+        """Sounds the system bell"""
+        self.bell()
+
+
+class PlaceholderEntry(tk.Entry):
+    """Entry widget which allows displaying simple text with default text in the widget."""
+    def __init__(self, master=None, placeholdertext='Placeholder', placeholdercolor='gray', **kwargs):
+        """Construct an placeholder entry widget with the parent MASTER.
+
+         Includes placeholder text in the widget to give information to the user
+
+        :
+         Valid resource names: background, bd, bg, borderwidth, cursor,
+         exportselection, fg, font, foreground, highlightbackground,
+         highlightcolor, highlightthickness, insertbackground,
+         insertborderwidth, insertofftime, insertontime, insertwidth,
+         invalidcommand, invcmd, justify, relief, selectbackground,
+         selectborderwidth, selectforeground, show, state, takefocus,
+         textvariable, validate, validatecommand, vcmd, width,
+         xscrollcommand, placeholdertext, placeholdercolor."""
+
+        super().__init__(master, **kwargs)
+
+        self.placeholdertext = placeholdertext
+        self.placeholdercolor = placeholdercolor
+        self.default_fg_color = self['fg']
+
+        self.bind("<FocusIn>", self.focus_in)
+        self.bind("<FocusOut>", self.focus_out)
+
+        self.put_place_holder()
+
+    def put_place_holder(self):
+        self['fg'] = self.placeholdercolor
+        self.insert(0, self.placeholdertext)
+
+    def focus_in(self, *args):
+        if self['fg'] == self.placeholdercolor:
+            self.delete('0', 'end')
+            self['fg'] = self.default_fg_color
+
+    def focus_out(self, *args):
+        if not self.get():
+            self.put_place_holder()
+
+
 # TODO: make this a modal window
 class MeetupTimerSet(tk.Frame):
     def __init__(self, master, **kw):
@@ -134,28 +423,20 @@ class MeetupTimerSet(tk.Frame):
         mvcmd = (self.register(self.validate_month), '%P')
         mivcmd = (self.register(self.on_invalid_month), '%P')
 
-        self.year_digit = DigitEntry(self, width=4)
-        self.month_digit = DigitEntry(self, width=2)
-        self.week_combo = ttk.Combobox(self, width=6)
-        self.day_of_week_combo = ttk.Combobox(self, width=9)
-        self.okay_button = ttk.Button(self, text="Ok")
-        self.cancel_button = ttk.Button(self, text="Cancel")
+        self.start_date = PlaceholderEntry(self, width=12, placeholdertext='mm/dd/yyyy',)
+        hours = [str(x) for x in range(1, 13)]
+        half_hours = []
+        for hour, half in zip([hour + ':00' for hour in hours], [hour + ':30' for hour in hours]):
+            half_hours.extend([hour, half])
+        half_hours = half_hours[-2:] + half_hours[:len(half_hours)-2]
+        combo_times = [x + ' AM' for x in half_hours] + [x + ' PM' for x in half_hours]
+        self.start_time = ttk.Combobox(self, values=combo_times)
+        self.start_time.current(0)
+        self.pick_date = ttk.Button(self, text='Pick Date')
 
-        tk.Label(self, text='Year').grid(row=0, column=0, sticky='w')
-        tk.Label(self, text='Month').grid(row=1, column=0, sticky='w')
-        tk.Label(self, text='Week').grid(row=2, column=0, sticky='w')
-        tk.Label(self, text='Day of Week').grid(row=3, column=0, sticky='w')
-        self.year_digit.grid(row=0, column=1, sticky='ew')
-        self.month_digit.grid(row=1, column=1, sticky='ew')
-        self.week_combo.grid(row=2, column=1, sticky='ew')
-        self.day_of_week_combo.grid(row=3, column=1, sticky='ew')
-        self.okay_button.grid(row=4, column=0)
-        self.cancel_button.grid(row=4, column=1)
-
-        self.week_combo['values'] = list(MeetupDate.occurrences)
-        self.day_of_week_combo['values'] = list(MeetupDate.days_of_week)
-        self.week_combo.set(list(MeetupDate.occurrences)[0])
-        self.day_of_week_combo.set(list(MeetupDate.days_of_week)[0])
+        self.start_date.grid(row=0, column=0)
+        self.start_time.grid(row=1, column=0)
+        self.pick_date.grid(row=0, column=1)
 
         self.pack()
 
@@ -178,274 +459,81 @@ class MeetupTimerSet(tk.Frame):
         pass
 
 
-class DigitEntry(tk.Entry):
-    def __init__(self, master, **kw):
-        super().__init__(master, **kw)
-
-        vcmd = (self.register(self.validate), '%P')
-        ivcmd = (self.register(self.on_invalid), )
-        self['font'] = ('TkDefaultFont', 18)
-        self['validate'] = 'key'
-        self['validatecommand'] = vcmd
-        self['invalidcommand'] = ivcmd
-        self.set('')
-
-    def set(self, value):
-        """Set the value of the DigitEntry.
-
-        This is probably a bad idea for some reason
-        """
-        self.delete(0, tk.END)
-        self.insert(0, f'{value:02}')
-
-    def get(self):
-        """Gets the value of the DigitEtnry.
-
-        :return: the int value and 0 if empty
-        """
-        return int(super().get()) if super().get() else 0
-
-    @staticmethod
-    def validate(value):
-        if (value.strip().isdigit() and len(value) <= 2) or value == '':
-            return True
-        return False
-
-    def on_invalid(self):
-        self.bell()
-        self.bell()
-
-
-class CountDownDisplay(tk.Frame):
-    """Frame widget which may contain other widgets.
-
-        STANDARD OPTIONS
-            background, bd, bg, borderwidth,
-            class , colormap, container, cursor, height, highlightbackground,
-            highlightcolor, highlightthickness, relief, takefocus, visual, width.
-        WIDGET SPECIFIC OPTIONS
-            ymd - include the TMD displys
-            digits - the number of digits per display field
-        """
-    def __init__(self, master, ymd=False, digits=None, **kwargs):
-        super().__init__(master, **kwargs)
-        self.ymd = ymd
-        self.digits = digits
-
-        # create the widgets
-        if self.ymd:
-            self.years_entry = DigitEntry(self, width=self.digits)  # DigitLabel(self)
-            self.months_entry = DigitEntry(self, width=self.digits)
-            self.days_entry = DigitEntry(self, width=self.digits)
-
-        self.hours_entry = DigitEntry(self, width=self.digits)
-        self.minutes_entry = DigitEntry(self, width=self.digits)
-        self.seconds_entry = DigitEntry(self, width=self.digits)
-
-        # add the widgets
-        if self.ymd:
-            # years, months, days
-            self.years_entry.grid(row=0, column=0, padx=5, pady=(5, 0))
-            tk.Label(self, text='|').grid(row=0, column=1, pady=(3, 0))
-            self.months_entry.grid(row=0, column=2, padx=5, pady=(5, 0))
-            tk.Label(self, text='|').grid(row=0, column=3, pady=(3, 0))
-            self.days_entry.grid(row=0, column=4, padx=5, pady=(5, 0))
-
-            tk.Label(self, text='Y').grid(row=1, column=0)
-            tk.Label(self, text='M').grid(row=1, column=2)
-            tk.Label(self, text='D').grid(row=1, column=4)
-
-        # hours, minutes, seconds
-        self.hours_entry.grid(row=2, column=0, padx=5, pady=(5, 0))
-        tk.Label(self, text='|').grid(row=2, column=1, pady=(3, 0))
-        self.minutes_entry.grid(row=2, column=2, padx=5, pady=(5, 0))
-        tk.Label(self, text='|').grid(row=2, column=3, pady=(3, 0))
-        self.seconds_entry.grid(row=2, column=4, padx=5, pady=(5, 0))
-
-        tk.Label(self, text='H').grid(row=3, column=0)
-        tk.Label(self, text='M').grid(row=3, column=2)
-        tk.Label(self, text='S').grid(row=3, column=4)
-
-
-class SimpleTimer(tk.Frame):
-    """Creates a simple countdown timer
-
-    The first 2/3 of the time is green.
-
-    The first 2/3 of the remaining time is yellow.
-
-    The remainder of the time is red.
-    """
-    def __init__(self, master):
-        super().__init__(master)
-
-        self.time_left = 0
-        self.paused = False
-        self.stopped = False
-        self.running = False
-
-        # create some validation variables
-        vcmd = (self.register(self.validate), '%P')
-        ivcmd = (self.register(self.on_invalid), '%P')
-
-        # create our text variables
-        self.hours_var = tk.IntVar()
-        self.minutes_var = tk.IntVar()
-        self.seconds_var = tk.IntVar()
-
-        # create the widgets
-
-        # self.display = CountDownDisplay(self, digits=2)
-        self.display_frame = ttk.Frame(self)
-        self.hours_entry = ttk.Entry(
-            self.display_frame,
-            width=2,
-            textvariable=self.hours_var,
-            validate='key',
-            validatecommand=vcmd,
-            invalidcommand=ivcmd,
-            font=('TkDefaultFont', 18),
-        )
-        self.minutes_entry = ttk.Entry(
-            self.display_frame,
-            width=2,
-            textvariable=self.minutes_var,
-            validate='key',
-            validatecommand=vcmd,
-            invalidcommand=ivcmd,
-            font=('TkDefaultFont', 18),
-        )
-        self.seconds_entry = ttk.Entry(
-            self.display_frame,
-            width=2,
-            textvariable=self.seconds_var,
-            validate='key',
-            validatecommand=vcmd,
-            invalidcommand=ivcmd,
-            font=('TkDefaultFont', 18),
-        )
-
-        # put the controls in a frame to control the spacing
-        self.control_frame = tk.Frame(self)
-        self.start_button = tk.Button(
-            self.control_frame,
-            text='\u25b6',
-            width=2,
-            font=('TkDefaultFont', 18),
-            command=self.timer_start,
-        )
-        self.stop_button = tk.Button(
-            self.control_frame,
-            text='\u25A0',
-            width=2,
-            font=('TkDefaultFont', 18),
-            command=self.timer_stop,
-        )
-        self.pause_button = tk.Button(
-            self.control_frame,
-            text='\u2016',
-            width=2,
-            font=('TkDefaultFont', 18),
-            command=self.timer_pause,
-        )
-
-        # layout the widgets
-
-        # display frame
-        self.hours_entry.grid(row=0, column=0)
-        ttk.Label(self.display_frame, text=" | ", font=('TkDefaultFont', 18)).grid(row=0, column=1)
-        self.minutes_entry.grid(row=0, column=2)
-        ttk.Label(self.display_frame, text=' | ', font=('TkDefaultFont', 18)).grid(row=0, column=3)
-        self.seconds_entry.grid(row=0, column=4)
-        ttk.Label(self.display_frame, text='H').grid(row=1, column=0)
-        ttk.Label(self.display_frame, text='M').grid(row=1, column=2)
-        ttk.Label(self.display_frame, text='S').grid(row=1, column=4)
-
-        self.display_frame.pack()
-
-        # control frame
-        self.start_button.grid(row=0, column=0)
-        self.pause_button.grid(row=0, column=1)
-        self.stop_button.grid(row=0, column=2)
-        self.control_frame.pack()  # (row=1, column=0, pady=(5, 10))
-
-        # add this frame to the parent layout
-        # self.grid(row=0, column=0)
-
-    def clear_timer(self):
-        self.hours_var.set('0')
-        self.minutes_var.set('0')
-        self.seconds_var.set('0')
-
-    def get_HMS(self):
-        """Returns a tuple (hours, minutes, seconds)"""
-        seconds = self.time_left
-        hours = seconds // 3600
-        seconds -= hours * 3600
-        minutes = seconds // 60
-        seconds -= minutes * 60
-        return hours, minutes, seconds
-
-    def update_display(self, hours, minutes, seconds):
-        self.hours_var.set(hours)
-        self.minutes_var.set(minutes)
-        self.seconds_var.set(seconds)
-
-    def tick(self):
-        if self.stopped:
-            self.clear_timer()
-            return
-        if not self.paused:
-            if self.time_left > 0:
-                self.time_left -= 1
-            hours, minutes, seconds = self.get_HMS()
-            self.update_display(hours, minutes, seconds)
-
-        self.after(1000, self.tick)
-
-    def timer_start(self):
-        print('start')
-        hours = int(self.hours_var.get()) if self.hours_var.get() else 0
-        minutes = int(self.minutes_var.get()) if self.minutes_var.get() else 0
-        seconds = int(self.seconds_var.get()) if self.seconds_var.get() else 0
-        self.time_left = hours * 3600 + minutes * 60 + seconds
-        self.tick()
-
-    def timer_pause(self):
-        print('pause')
-        self.paused = not self.paused
-
-    def timer_stop(self):
-        self.stopped = True
-
-    def validate(self, value):
-        print(f'validate: {value}')
-        # can only have 2 digits
-        if len(value) > 2:
-            return False
-        # can only be digits
-        for c in value:
-            if not c.isdigit():
-                return False
-        return True
-
-    def on_invalid(self, _):
-        self.bell()
-
-
 class MeetupTimer(tk.Frame):
     """Creates a meetup countdown timer
     """
     def __init__(self, master):
         super().__init__(master)
+        self.font_size = 24
+        self.years_var = tk.StringVar(value='')
+        self.months_var = tk.StringVar(value='')
+        self.days_var = tk.StringVar(value='')
+        self.hours_var = tk.StringVar(value='')
+        self.minutes_var = tk.StringVar(value='')
+        self.seconds_var = tk.StringVar(value='')
 
         # create the widgets
-        self.display = CountDownDisplay(self, ymd=True, digits=2)
+        # self.display = CountDownDisplay(self, ymd=True, digits=2)
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.years_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2,
+        ).grid(column=0, row=0, padx=5, pady=5)  # years
+        ttk.Separator(self, orient='vertical', ).grid(column=1, row=0, rowspan=2, sticky='ns')
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.months_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2
+        ).grid(column=2, row=0, padx=5, pady=5)  # months
+        ttk.Separator(self, orient='vertical').grid(column=3, row=0, rowspan=2, sticky='ns')
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.days_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2
+        ).grid(column=4, row=0, padx=5, pady=5)  # days
+
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.hours_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2
+        ).grid(column=0, row=2, padx=5, pady=5)  # years
+        ttk.Separator( self, orient='vertical', ).grid(column=1, row=2, rowspan=2, sticky='ns')
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.minutes_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2,
+        ).grid(column=2, row=2)  # months
+        ttk.Separator(self, orient='vertical').grid(column=3, row=2, rowspan=2, sticky='ns')
+        ttk.Entry(
+            self,
+            state='readonly',
+            textvariable=self.seconds_var,
+            font=('TkDefaultFont', self.font_size),
+            width=2,
+        ).grid(column=4, row=2, padx=5, pady=5)  # days
+
+        ttk.Label(self, text='H').grid(column=0, row=3)
+        ttk.Label(self, text='M').grid(column=2, row=3)
+        ttk.Label(self, text='S').grid(column=4, row=3)
+
+        ttk.Label(self, text='Y').grid(column=0, row=1)
+        ttk.Label(self, text='M').grid(column=2, row=1)
+        ttk.Label(self, text='D').grid(column=4, row=1)
+
         self.setup_button = ttk.Button(self, text='Set', command=self.set_timer)
 
         # add the widgets
-        self.display.grid(row=0, column=0)
-        self.setup_button.grid(row=1, column=0)
+        self.setup_button.grid(row=4, column=0, columnspan=5)
 
         # self.grid(row=0, column=0)
 
@@ -459,147 +547,26 @@ class MeetupTimer(tk.Frame):
         print('hello')
 
 
-# class ControlFrame(ttk.Labelframe):
-#     """Controls which timer frame is displayed.
-#
-#     There are two timer types:
-#         Simple timer - Counts down based on the user entered years, months, days, hours, minutes, seconds.
-#
-#         Meetup timer - Counts down the time until the next occurrence of the meetup date
-#
-#     The default is the simple timer
-#     """
-#     def __init__(self, master):
-#         super().__init__(master)
-#
-#         self['text'] = 'Timer Type'
-#
-#         # create the radio buttons
-#
-#         self.timer_type_var = tk.StringVar()
-#
-#         # make the simple timer the default
-#         self.timer_type_var.set('Simple')
-#
-#         self.grid(row=1, column=0)
-#
-#         self.timer_radio = ttk.Radiobutton(
-#             self,
-#             text="Simple",
-#             value="Simple",
-#             variable=self.timer_type_var,
-#         )
-#
-#         self.meetup_radio = ttk.Radiobutton(
-#             self,
-#             text="Meetup",
-#             value="Meetup",
-#             variable=self.timer_type_var,
-#         )
-#
-#         # add the radios to the parent
-#         self.timer_radio.grid(row=0, column=0, padx=5, pady=5)
-#         self.meetup_radio.grid(row=0, column=1, padx=5, pady=5)
-
-
 class View(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
+        self.rowconfigure(0, weight=2)
+        self.columnconfigure(0, weight=2)
+
         self.notebook = ttk.Notebook(self)
         simple_timer = SimpleTimer(self.notebook)
         meetup_timer = MeetupTimer(self.notebook)
-        simple_timer.pack(fill='both', expand=True)
-        meetup_timer.pack(fill='both', expand=True)
+        simple_timer.grid(row=0, column=0, sticky=tk.NSEW)
+        meetup_timer.grid(sticky=tk.NSEW)
+        self.notebook.rowconfigure(0, weight=1)
+        self.notebook.columnconfigure(0, weight=1)
         self.notebook.add(simple_timer, text='Timer')
         self.notebook.add(meetup_timer, text='Meetup')
+        self['background'] = 'blue'
+        self.notebook.grid(sticky=tk.NSEW)
 
-        self.notebook.pack()
-
-        self.grid(row=0, column=0)
-
-
-class Controller:
-    def __init__(self, master, model, view):
-        super().__init__()
-        self.master = master
-        self.model = model
-        self.view = view
-        self.set_command_handlers()
-
-        self.change_timer_type()
-
-    def set_command_handlers(self):
-        self.view.timer_type.timer_radio['command'] = self.change_timer_type
-        self.view.timer_type.meetup_radio['command'] = self.change_timer_type
-        self.view.frames['Simple'].start_button['command'] = self.simple_timer_start
-        self.view.frames['Simple'].pause_button['command'] = self.simple_timer_pause
-        self.view.frames['Simple'].stop_button['command'] = self.simple_timer_stop
-
-    def change_timer_type(self):
-        for f in self.view.frames:
-            if f == self.view.timer_type.timer_type_var.get():
-                frame = self.view.frames[self.view.timer_type.timer_type_var.get()]
-                frame.reset()
-                frame.grid(row=0, column=0)
-            else:
-                self.view.frames[f].grid_remove()
-
-    def simple_timer_start(self):
-        self.model.simple_hours = self.view.frames['Simple'].display.hours_entry.get()
-        self.model.simple_minutes = self.view.frames['Simple'].display.minutes_entry.get()
-        self.model.simple_seconds = self.view.frames['Simple'].display.seconds_entry.get()
-        self.model.simple_timer_running = True
-        self.model.simple_timer_paused = False
-        self.model.simple_timer_first_run = True
-        self.simple_timer_run()
-
-    def simple_timer_pause(self):
-        self.model.simple_paused = not self.model.simple_paused
-
-    def simple_timer_stop(self):
-        # reset the display to all 0's
-        # make all displays editable
-        self.model.simple_timer_running = False
-        self.view.frames['Simple'].display.hours_entry.set('')
-        self.view.frames['Simple'].display.minutes_entry.set('')
-        self.view.frames['Simple'].display.seconds_entry.set('')
-
-        self.view.frames['Simple'].display.hours_entry['state'] = 'normal'
-        self.view.frames['Simple'].display.minutes_entry['state'] = 'normal'
-        self.view.frames['Simple'].display.seconds_entry['state'] = 'normal'
-
-    def simple_timer_run(self):
-        print(self.model.simple_hours, self.model.simple_minutes, self.model.simple_seconds, self.model.simple_hundredths)
-        if not self.model.simple_timer_running:
-            return
-        if self.model.simple_paused:
-            self.master.after(1000, self.simple_timer_run)
-            return
-        if self.model.simple_seconds > 1:
-            self.model.simple_seconds -= 1
-        elif self.model.simple_minutes > 0:
-            self.model.simple_minutes -= 1
-            self.model.simple_seconds = 59
-        elif self.model.simple_hours > 0:
-            self.model.simple_hours -= 1
-            self.model.simple_minutes = 59
-            self.model.simple_seconds = 59
-        else:
-            if self.model.simple_timer_running:
-                self.model.simple_seconds = 0
-                self.update_simple_display()
-                self.master.update()
-                self.view.bell()
-                return
-        self.update_simple_display()
-        if self.model.simple_timer_running:
-            self.master.after(1000, self.simple_timer_run)
-
-    def update_simple_display(self):
-        self.view.frames['Simple'].display.hours_entry.set(self.model.simple_hours)
-        self.view.frames['Simple'].display.minutes_entry.set(self.model.simple_minutes)
-        self.view.frames['Simple'].display.seconds_entry.set(self.model.simple_seconds)
+        self.grid(padx=10, pady=10, sticky=tk.NSEW)
 
 
 class App(tk.Tk):
@@ -607,11 +574,8 @@ class App(tk.Tk):
         super().__init__()
 
         self.title('Countdown Timer')
-        self.resizable(False, False)
 
         view = View(self)
-
-        # Controller(self, model, view)
 
 
 if __name__ == "__main__":
